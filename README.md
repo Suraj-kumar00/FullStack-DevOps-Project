@@ -21,3 +21,27 @@ docker exec -it db psql -U postgres
 \l
 \dt
 ```
+
+```bash
+docker compose build
+
+docker compose up -d backend
+
+docker exec -it backend npx prisma migrate dev --name init
+```
+
+Insert data directly from postgres terminal
+
+```bash
+insert into "User" (name, email) values ('frompsql', 'userfrompsqlmail');
+```
+
+```bash
+docker compose up -d frontend
+```
+
+to stop the containers:
+
+```bash
+docker compose stop
+```
