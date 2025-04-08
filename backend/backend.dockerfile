@@ -6,12 +6,27 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY prisma ./prisma
+COPY prisma ./prisma/
 
 RUN npx prisma generate
 
 COPY . .
 
-EXPOSE 4000
+RUN echo '#!/bin/sh\n\
+echo "Waiting for database to be ready..."\n\
+while ! npx prisma db ping 2>/dev/null; do\n\
+    sleep 1\n\
+done\n\
+echo "Database is ready!"\n\
+\n\
+echo "Running database migrations..."\n\
+npx prisma migrate deploy\n\
+\n\
+echo "Starting the application..."\n\
+npm start' > start.sh
 
-CMD ["node", "index.js"]
+RUN chmod +x start.sh
+
+EXPOSE 5000
+
+CMD ["./start.sh"]

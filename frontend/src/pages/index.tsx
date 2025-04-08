@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import CardComponent from "../components/CardComponent";
 
 interface User {
@@ -8,67 +8,81 @@ interface User {
   email: string;
 }
 
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000",
+  timeout: 5000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 export default function Home() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   const [users, setUsers] = useState<User[]>([]);
   const [newUser, setNewUser] = useState({ name: "", email: "" });
   const [updateUser, setUpdateUser] = useState({ id: "", name: "", email: "" });
 
-  //fetch users
+  // Fetch users
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${apiUrl}/users`);
+        const response = await api.get("/users");
         setUsers(response.data.reverse());
-      } catch (error) {
-        console.error("Error fetching data:", error);
+      } catch (err) {
+        const error = err as AxiosError;
+        console.error("❌ Error fetching users:", error.message);
+        alert("Failed to fetch users. Please check your API server.");
       }
     };
 
     fetchData();
   }, []);
 
-  //create user
+  // Create user
   const createUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${apiUrl}/users`, newUser);
+      const response = await api.post("/users", newUser);
       setUsers([response.data, ...users]);
       setNewUser({ name: "", email: "" });
-    } catch (error) {
-      console.error("Error creating user:", error);
+    } catch (err) {
+      const error = err as AxiosError;
+      console.error("❌ Error creating user:", error.message);
+      alert("Failed to create user.");
     }
   };
 
-  //update user
+  // Update user
   const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      axios.put(`${apiUrl}/users/${updateUser.id}`, {
+      await api.put(`/users/${updateUser.id}`, {
         name: updateUser.name,
         email: updateUser.email,
       });
       setUpdateUser({ id: "", name: "", email: "" });
-      setUsers(
-        users.map((user) => {
-          if (user.id === parseInt(updateUser.id)) {
-            return { ...user, name: updateUser.name, email: updateUser.email };
-          }
-          return user;
-        })
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === parseInt(updateUser.id)
+            ? { ...user, name: updateUser.name, email: updateUser.email }
+            : user
+        )
       );
-    } catch (error) {
-      console.error("Error updating user:", error);
+    } catch (err) {
+      const error = err as AxiosError;
+      console.error("❌ Error updating user:", error.message);
+      alert("Failed to update user.");
     }
   };
 
-  //delete user
+  // Delete user
   const deleteUser = async (userId: number) => {
     try {
-      await axios.delete(`${apiUrl}/users/${userId}`);
+      await api.delete(`/users/${userId}`);
       setUsers(users.filter((user) => user.id !== userId));
-    } catch (error) {
-      console.error("Error deleting user:", error);
+    } catch (err) {
+      const error = err as AxiosError;
+      console.error("❌ Error deleting user:", error.message);
+      alert("Failed to delete user.");
     }
   };
 
